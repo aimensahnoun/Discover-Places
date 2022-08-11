@@ -12,17 +12,21 @@ import axios from 'axios'
 import { Location } from '@Types/types'
 
 // Consts import
-import { GOECODING_URI } from '@Const/api-uri'
+import { GOECODING_URI, PLACES_URI } from '@Const/api-uri'
+
+// API import
+import { fetchPlaces, fetchGeocoding } from '@API/places'
 
 
 const Home: NextPage = () => {
 
   const [locationString, setLocationString] = useState<string>("")
   const [locations, setLocations] = useState<string[]>([])
-  const [coordinates, setCoordinates] = useState<Location[]>([])
+  const [selectedTab, setSelectedTab] = useState<number>(0)
 
-  let debouncer: NodeJS.Timeout;
 
+
+  let debounce: NodeJS.Timeout;
 
   // seperating the locations based on the commas
   useEffect(() => {
@@ -31,32 +35,6 @@ const Home: NextPage = () => {
 
   }, [locationString])
 
-// Goecoding the locations entered by users
-  useEffect(() => {
-    try {
-      (async () => {
-        if (locations.length === 0) return setCoordinates([])
-
-        let newCoordinates: Location[] = []
-
-        locations.forEach(async (location: string) => {
-          const result = await axios.get(GOECODING_URI(location))
-          const lat = result.data.features[0]?.properties?.lat
-          const lon = result.data.features[0]?.properties?.lon
-          newCoordinates.push({ lat, lon })
-        })
-
-        setCoordinates(newCoordinates)
-
-      })()
-    } catch (e) {
-      console.log(e)
-    }
-
-
-
-
-  }, [locations])
 
   return (
     <div className='py-[3rem] px-[2rem]  flex flex-col items-center w-screen h-screen'>
@@ -64,21 +42,47 @@ const Home: NextPage = () => {
         <title>Discover Places</title>
       </Head>
       <span className='font-bold text-[2.5rem] mb-6'>Discover Places</span>
-      <div className="form-control w-full max-w-xs">
-        <label className="label">
-          <span className="label-text">Where?</span>
-          <span className="label-text-alt">Seperate with commas</span>
-        </label>
-        <input type="text" placeholder="Type locations" className="input input-bordered w-full max-w-xs" onChange={(e) => {
-          clearTimeout(debouncer)
 
-          debouncer = setTimeout(() => {
-            setLocationString(e.target.value)
-          }, 500)
+      <div className='flex items-end gap-x-4 w-full justify-center mb-6'>
+        <div className="form-control w-full max-w-xs">
+          <label className="label">
+            <span className="label-text">Where?</span>
+            <span className="label-text-alt">Seperate with commas</span>
+          </label>
+          <input type="text" placeholder="Type locations" className="input input-bordered w-full max-w-xs" onChange={(e) => {
+            clearTimeout(debounce)
+            debounce = setTimeout(() => {
+              setLocationString(e.target.value)
+            }, 500)
+          }} />
 
-        }} />
+        </div>
+
+        <div className="tooltip" data-tip="Click to search for places">
+          <button
+
+            disabled={locations.length === 0}
+            onClick={async () => {
+              if (locations.length === 0) return
+              const test = await fetchGeocoding(locations)
+              console.log("Function coordinates : ", test)
+              const places = await fetchPlaces(test)
+              console.log("Function places : ", places)
+            }} className='btn'>Search</button>
+        </div>
+
 
       </div>
+
+      {
+        locations.length > 0 &&
+        <div className="tabs">
+          {locations.map((location, index) => {
+            return <a key={location} onClick={() => setSelectedTab(index)} className={`tab tab-lifted ${index === selectedTab && "tab-active"}`}>{location}</a>
+          })}
+        </div>
+      }
+
     </div>
   )
 }

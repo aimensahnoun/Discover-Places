@@ -1,4 +1,11 @@
 export type Location = {
-  lon: number;
-  lat: number;
+  lon: string;
+  lat: string;
 };
+
+
+export type Place = {
+    address: string;
+    name : string;
+    
+}
