@@ -16,6 +16,7 @@ import { GOECODING_URI, PLACES_URI } from '@Const/api-uri'
 
 // API import
 import { fetchPlaces, fetchGeocoding } from '@API/places'
+import Place from '@Components/place'
 
 
 const Home: NextPage = () => {
@@ -23,7 +24,7 @@ const Home: NextPage = () => {
   const [locationString, setLocationString] = useState<string>("")
   const [locations, setLocations] = useState<string[]>([])
   const [selectedTab, setSelectedTab] = useState<number>(0)
-
+  const [places, setPlaces] = useState<any[]>([])
 
 
   let debounce: NodeJS.Timeout;
@@ -37,7 +38,7 @@ const Home: NextPage = () => {
 
 
   return (
-    <div className='py-[3rem] px-[2rem]  flex flex-col items-center w-screen h-screen'>
+    <div className='py-[3rem] px-[2rem]  flex flex-col items-center w-screen min-h-screen'>
       <Head>
         <title>Discover Places</title>
       </Head>
@@ -64,10 +65,11 @@ const Home: NextPage = () => {
             disabled={locations.length === 0}
             onClick={async () => {
               if (locations.length === 0) return
-              const test = await fetchGeocoding(locations)
-              console.log("Function coordinates : ", test)
-              const places = await fetchPlaces(test)
-              console.log("Function places : ", places)
+              const coordinates = await fetchGeocoding(locations)
+              console.log("Function coordinates : ", coordinates)
+              const returnedPlaces = await fetchPlaces(coordinates)
+              setPlaces(returnedPlaces)
+              console.log("Function places : ", returnedPlaces)
             }} className='btn'>Search</button>
         </div>
 
@@ -75,13 +77,22 @@ const Home: NextPage = () => {
       </div>
 
       {
-        locations.length > 0 &&
+        locations.length > 0 && places.length > 0 && 
         <div className="tabs">
           {locations.map((location, index) => {
             return <a key={location} onClick={() => setSelectedTab(index)} className={`tab tab-lifted ${index === selectedTab && "tab-active"}`}>{location}</a>
           })}
         </div>
       }
+
+
+      <div className='grid gap-4 grid-cols-3 grid-rows-3'>
+        {
+          places[selectedTab] && places[selectedTab]?.features?.map((place : any, index: number) => {
+            return <Place key={index} place={place.properties} />
+          })
+        }
+      </div>
 
     </div>
   )
